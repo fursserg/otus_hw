@@ -1,4 +1,4 @@
-module github.com/fursserg/otus_hw
+module github.com/fursserg/otus_hw/hw01_hello_otus
 
 go 1.22
 
