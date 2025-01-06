@@ -1,4 +1,4 @@
-package main
+package hw02unpackstring
 
 import (
 	"errors"
@@ -21,6 +21,13 @@ func TestUnpack(t *testing.T) {
 		{input: `qwe\45`, expected: `qwe44444`},
 		{input: `qwe\\5`, expected: `qwe\\\\\`},
 		{input: `qwe\\\3`, expected: `qwe\3`},
+
+		{input: `\0`, expected: `0`},
+		{input: `\\0`, expected: ``},
+		{input: ` 0`, expected: ``},
+		{input: `b 3c`, expected: `b   c`},
+		{input: `😏2`, expected: `😏😏`},
+		{input: `ᛘ2жю\03f`, expected: `ᛘᛘжю000f`},
 	}
 
 	for _, tc := range tests {
@@ -34,7 +41,7 @@ func TestUnpack(t *testing.T) {
 }
 
 func TestUnpackInvalidString(t *testing.T) {
-	invalidStrings := []string{"3abc", "45", "aaa10b"}
+	invalidStrings := []string{"3abc", "45", "aaa10b", `\n`, `\a`, `fff\`}
 	for _, tc := range invalidStrings {
 		tc := tc
 		t.Run(tc, func(t *testing.T) {
