@@ -6,26 +6,14 @@ import (
 	"strings"
 )
 
-var (
-	ErrInvalidString = errors.New("invalid string")
-	ErrTooManyChars  = errors.New("too many characters")
-)
+var ErrInvalidString = errors.New("invalid string")
 
 func Unpack(str string) (string, error) {
 	var res strings.Builder
 	runes := []rune(str)
 
-	if valid, err := isValid(str); !valid || err != nil {
-		return "", ErrInvalidString
-	}
-
 	for i := 0; i < len(runes); i++ {
 		symbol := string(runes[i])
-
-		next := ""
-		if len(runes) > i+1 {
-			next = string(runes[i+1])
-		}
 
 		prev := ""
 		if i > 0 {
@@ -37,8 +25,23 @@ func Unpack(str string) (string, error) {
 			prevPrev = string(runes[i-2])
 		}
 
-		isNextNum, nextNum, nextNumErr := isNumeric(next)
-		if next != "" && nextNumErr != nil {
+		// строка заканчивается на слэш
+		if symbol == "\\" && len(runes)-1 == i {
+			return "", ErrInvalidString
+		}
+
+		// слэш используется не только для экранирования слэшей и цифр
+		if symbol == "\\" && !isNumeric(runes[i+1]) && string(runes[i+1]) != "\\" {
+			return "", ErrInvalidString
+		}
+
+		// строка начианется с инта
+		if isNumeric(runes[i]) && i == 0 {
+			return "", ErrInvalidString
+		}
+
+		// проверка на два инта подряд
+		if i > 1 && isNumeric(runes[i]) && isNumeric(runes[i-1]) && string(runes[i-2]) != "\\" {
 			return "", ErrInvalidString
 		}
 
@@ -46,7 +49,12 @@ func Unpack(str string) (string, error) {
 			continue
 		}
 
-		if isNextNum {
+		if len(runes) > i+1 && isNumeric(runes[i+1]) {
+			nextNum, err := strconv.Atoi(string(runes[i+1]))
+			if err != nil {
+				return "", ErrInvalidString
+			}
+
 			res.WriteString(strings.Repeat(symbol, nextNum))
 			i++
 			continue
@@ -58,75 +66,6 @@ func Unpack(str string) (string, error) {
 	return res.String(), nil
 }
 
-func isNumeric(s string) (bool, int, error) {
-	if len([]rune(s)) != 1 {
-		return false, 0, ErrTooManyChars
-	}
-
-	if (s[0] > 47) && (s[0] < 58) {
-		num, err := strconv.Atoi(s)
-		if err != nil {
-			return false, 0, err
-		}
-
-		return true, num, nil
-	}
-
-	return false, 0, nil
-}
-
-func isValid(s string) (bool, error) {
-	runes := []rune(s)
-
-	for i := 0; i < len(runes); i++ {
-		symbol := string(runes[i])
-
-		next := ""
-		if len(runes) > i+1 {
-			next = string(runes[i+1])
-		}
-
-		prev := ""
-		if i > 0 {
-			prev = string(runes[i-1])
-		}
-
-		prevPrev := ""
-		if i > 1 {
-			prevPrev = string(runes[i-2])
-		}
-
-		isNum, _, curNumErr := isNumeric(symbol)
-		if curNumErr != nil {
-			return false, ErrInvalidString
-		}
-
-		isNextNum, _, nextNumErr := isNumeric(next)
-		if next != "" && nextNumErr != nil {
-			return false, ErrInvalidString
-		}
-
-		isPrevNum, _, prevNumErr := isNumeric(prev)
-		if prev != "" && prevNumErr != nil {
-			return false, ErrInvalidString
-		}
-
-		if symbol == "\\" && next == "" {
-			return false, ErrInvalidString
-		}
-
-		if symbol == "\\" && !isNextNum && next != "\\" {
-			return false, ErrInvalidString
-		}
-
-		if isNum && i == 0 {
-			return false, ErrInvalidString
-		}
-
-		if isNum && isPrevNum && i > 1 && prevPrev != "\\" {
-			return false, ErrInvalidString
-		}
-	}
-
-	return true, nil
+func isNumeric(r rune) bool {
+	return r >= '0' && r <= '9'
 }
