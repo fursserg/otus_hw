@@ -7,7 +7,7 @@ import (
 )
 
 // Change to true if needed.
-var taskWithAsteriskIsCompleted = false
+var taskWithAsteriskIsCompleted = true
 
 var text = `Как видите, он  спускается  по  лестнице  вслед  за  своим
 	другом   Кристофером   Робином,   головой   вниз,  пересчитывая
@@ -78,5 +78,44 @@ func TestTop10(t *testing.T) {
 			}
 			require.Equal(t, expected, Top10(text))
 		}
+	})
+
+	t.Run("words with punctuation marks", func(t *testing.T) {
+		require.Equal(t,
+			Top10(`cat !and: dog, one dog,two cats 'and" one man`), []string{
+				"and",
+				"one",
+				"cat",
+				"cats",
+				"dog",
+				"dog,two",
+				"man",
+			})
+	})
+
+	t.Run("many white spaces and special symbols", func(t *testing.T) {
+		require.Equal(t,
+			Top10("cat    and\n \tdog, one dog,two cats and one   man \n  "), []string{
+				"and",
+				"one",
+				"cat",
+				"cats",
+				"dog",
+				"dog,two",
+				"man",
+			})
+	})
+
+	t.Run("words with uppercase chars", func(t *testing.T) {
+		require.Equal(t,
+			Top10("cat And dog, one dog,two cats AND one man"), []string{
+				"and",
+				"one",
+				"cat",
+				"cats",
+				"dog",
+				"dog,two",
+				"man",
+			})
 	})
 }
