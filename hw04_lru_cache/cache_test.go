@@ -50,13 +50,32 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		capacity := 5
+		c := NewCache(capacity)
+
+		for i := 0; i < capacity; i++ {
+			c.Set(Key(strconv.Itoa(i)), i)
+		} // 4,3,2,1,0
+
+		c.Set("new first", "new first") // "new first",4,3,2,1
+
+		val, ok := c.Get("0")
+		require.False(t, ok)
+		require.Nil(t, val)
+
+		for i := capacity - 1; i > 0; i-- {
+			c.Get(Key(strconv.Itoa(i)))
+		} // 1, 2, 3, 4, "new first"
+
+		c.Set("0", "0") // 1, 2, 3, 4, 0
+
+		val, ok = c.Get("new first")
+		require.False(t, ok)
+		require.Nil(t, val)
 	})
 }
 
-func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
-
+func TestCacheMultithreading(_ *testing.T) {
 	c := NewCache(10)
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
