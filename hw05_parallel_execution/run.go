@@ -48,7 +48,7 @@ func Run(tasks []Task, n, m int) error {
 			}
 
 			if err := v(); err != nil {
-				ec.increaseErrors()
+				ec.increaseErrorsAndMarkEx()
 			}
 		}()
 	}
@@ -62,12 +62,18 @@ func Run(tasks []Task, n, m int) error {
 	return result
 }
 
-func (ec *errorsCounter) increaseErrors() {
+func (ec *errorsCounter) increaseErrorsAndMarkEx() {
 	defer ec.mx.Unlock()
 	ec.mx.Lock()
 
 	ec.errCount++
+	ec.checkAndMarkEx()
+}
 
+func (ec *errorsCounter) checkAndMarkEx() {
+	// проверка в функции не защищена от рейса,
+	// т.к. в данной реализации вызов checkAndMarkEx происходит
+	// из функции где ставиться лок на входе и анлок на выходе
 	if ec.ErrLimit == ec.errCount {
 		ec.exceeded.Store(true)
 	}
