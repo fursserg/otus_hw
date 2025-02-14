@@ -22,36 +22,45 @@ type errorsCounter struct {
 func Run(tasks []Task, n, m int) error {
 	var wg sync.WaitGroup
 	var result error
-	ch := make(chan struct{}, n)
+	ch := make(chan Task)
+	done := make(chan struct{})
 	ec := errorsCounter{ErrLimit: m}
 
 	defer func() {
 		close(ch)
 	}()
 
-	for _, v := range tasks {
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for {
+				select {
+				case <-done:
+					return
+				case task, ok := <-ch:
+					if ec.isErrorsExceeded() || !ok {
+						return
+					}
+
+					if err := task(); err != nil {
+						ec.increaseErrorsAndMarkEx()
+					}
+				}
+			}
+		}()
+	}
+
+	for _, task := range tasks {
 		if ec.isErrorsExceeded() {
 			break
 		}
 
-		ch <- struct{}{}
-		wg.Add(1)
-
-		go func() {
-			defer func() {
-				<-ch
-				wg.Done()
-			}()
-
-			if ec.isErrorsExceeded() {
-				return
-			}
-
-			if err := v(); err != nil {
-				ec.increaseErrorsAndMarkEx()
-			}
-		}()
+		ch <- task
 	}
+
+	close(done)
 
 	wg.Wait()
 
