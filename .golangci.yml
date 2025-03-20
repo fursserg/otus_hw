@@ -22,7 +22,6 @@ linters-settings:
         allow:
           - $gostd
           - github.com/stretchr/testify
-
 issues:
   exclude-rules:
     - path: _test\.go
@@ -43,7 +42,7 @@ linters:
     - durationcheck
     - errorlint
     - exhaustive
-    - exportloopref
+    - copyloopvar
     - funlen
     - gci
     - gocognit
